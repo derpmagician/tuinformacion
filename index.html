@@ -3,48 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Información del Visitante</title>
+    <title>Información del Sistema</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="theme-switch-wrapper">
-        <label class="theme-switch" for="checkbox">
-            <input type="checkbox" id="checkbox" />
-            <div class="slider round">
-                <span class="sun">☀️</span>
-                <span class="moon">🌙</span>
-            </div>
-        </label>
-    </div>
-    
+    <header>
+        <h1>Información del Sistema</h1>
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <em>Modo Oscuro</em>
+        </div>
+    </header>
+
     <div class="container">
-        <h1>Información del Visitante</h1>
+        <section class="info-section">
+            <h2>Información del Navegador</h2>
+            <div id="browserData" class="info-content"></div>
+        </section>
         
-        <div class="category-section">
-            <h2>Datos del Navegador</h2>
-            <div id="browserData" class="info-section"></div>
-        </div>
+        <section class="info-section">
+            <h2>Información del Sistema</h2>
+            <div id="systemData" class="info-content"></div>
+        </section>
+        
+        <section class="info-section">
+            <h2>Información de Pantalla</h2>
+            <div id="screenData" class="info-content"></div>
+        </section>
+        
+        <section class="info-section">
+            <h2>Información del Mouse</h2>
+            <div id="mouseData" class="info-content"></div>
+        </section>
+        
+        <section class="info-section">
+            <h2>Información de Red</h2>
+            <div id="networkData" class="info-content"></div>
+        </section>
 
-        <div class="category-section">
-            <h2>Datos del Sistema</h2>
-            <div id="systemData" class="info-section"></div>
-        </div>
+        <section class="info-section">
+            <h2>Rendimiento</h2>
+            <div id="performanceData" class="info-content"></div>
+        </section>
 
-        <div class="category-section">
-            <h2>Datos de Pantalla y Ventana</h2>
-            <div id="screenData" class="info-section"></div>
-        </div>
+        <section class="info-section">
+            <h2>Capacidades Multimedia</h2>
+            <div id="mediaData" class="info-content"></div>
+        </section>
 
-        <div class="category-section">
-            <h2>Datos del Mouse</h2>
-            <div id="mouseData" class="info-section"></div>
-        </div>
+        <section class="info-section">
+            <h2>Almacenamiento</h2>
+            <div id="storageData" class="info-content"></div>
+        </section>
 
-        <div class="category-section">
-            <h2>Datos de Red</h2>
-            <div id="networkData" class="info-section"></div>
-        </div>
+        <section class="info-section">
+            <h2>Permisos</h2>
+            <div id="permissionsData" class="info-content"></div>
+        </section>
     </div>
+
+    <footer>
+        <p>Actualización automática cada 15 segundos</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>

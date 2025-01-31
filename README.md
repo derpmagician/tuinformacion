@@ -4,34 +4,60 @@ Una aplicación web moderna que muestra información detallada sobre el visitant
 
 ## ✨ Características
 
-- 🔄 Información en tiempo real del sistema
-  - Navegador y User Agent
-  - Sistema Operativo
-  - Estado de la batería
-  - Información de GPU
-  - Preferencias del sistema
+### 🔄 Información del Sistema y Navegador
+- Navegador y User Agent
+- Sistema Operativo
+- Estado de la batería
+- Información de GPU
+- Preferencias del sistema
 
-- 📱 Datos de pantalla
-  - Resolución y tamaño de ventana
-  - Soporte táctil
-  - Orientación
-  - Múltiples pantallas
+### 📱 Datos de Pantalla
+- Resolución y tamaño de ventana
+- Soporte táctil
+- Orientación
+- Múltiples pantallas
 
-- 🖱️ Seguimiento del mouse
-  - Posición actual
-  - Último clic registrado
+### 🖱️ Seguimiento del Mouse
+- Posición actual
+- Último clic registrado
 
-- 🌙 Tema claro/oscuro
-  - Cambio dinámico de tema
-  - Persistencia de preferencias
-  - Diseño responsive
+### 🚀 Rendimiento
+- Uso de memoria JavaScript
+- Tiempos de carga de página
+- Tiempos de DNS y conexión
+- Métricas de rendimiento
+
+### 🎮 Capacidades Multimedia
+- Soporte de formatos de audio (MP3, WAV, OGG)
+- Soporte de formatos de video (MP4, WebM, OGG)
+- Capacidades WebRTC
+- Soporte para grabación multimedia
+
+### 💾 Almacenamiento
+- Estado de localStorage/sessionStorage
+- Cuotas de almacenamiento
+- Espacio disponible
+- Estado de cookies
+
+### 🔒 Permisos del Navegador
+- Ubicación
+- Notificaciones
+- Micrófono/Cámara
+- Permisos del portapapeles
+
+### 🌙 Tema Claro/Oscuro
+- Cambio dinámico de tema
+- Persistencia de preferencias
+- Diseño responsive
 
 ## 🚀 Tecnologías
 
 - HTML5
 - CSS3 (Variables CSS para temas)
-- JavaScript (APIs modernas del navegador)
-- LocalStorage para persistencia
+- JavaScript moderno
+  - APIs asíncronas
+  - APIs modernas del navegador
+  - LocalStorage para persistencia
 
 ## 💻 APIs Utilizadas
 
@@ -41,6 +67,10 @@ Una aplicación web moderna que muestra información detallada sobre el visitant
 - Navigator API
 - MediaQuery API
 - Network Information API
+- Performance API
+- Media Capabilities API
+- Storage API
+- Permissions API
 
 ## 🛠️ Instalación
 
@@ -54,16 +84,17 @@ git clone [URL del repositorio]
 ## 📝 Notas
 
 - La información se actualiza automáticamente cada 15 segundos
-- Algunas características pueden no estar disponibles dependiendo del navegador
-- El estado de la batería solo funciona en navegadores compatibles
+- Los datos de rendimiento y permisos son en tiempo real
+- El soporte de algunas características depende del navegador
+- Los permisos requieren interacción del usuario para ser concedidos
 
 ## 🌐 Compatibilidad
 
-Funciona en navegadores modernos:
-- Chrome
+Funciona mejor en navegadores modernos:
+- Chrome (recomendado)
 - Firefox
 - Edge
-- Safari
+- Safari (soporte parcial)
 
 ## 📜 Licencia
 

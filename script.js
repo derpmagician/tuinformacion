@@ -47,7 +47,41 @@ const labels = {
     // Network labels
     ip: 'Dirección IP',
     conexion: 'Tipo de Conexión',
-    velocidad: 'Velocidad de Descarga'
+    velocidad: 'Velocidad de Descarga',
+
+    // Performance labels
+    'memoria.limiteJS': 'Límite de Memoria JS',
+    'memoria.memoriaTotal': 'Memoria Total JS',
+    'memoria.memoriaUsada': 'Memoria JS Usada',
+    'tiempos.tiempoCarga': 'Tiempo de Carga',
+    'tiempos.tiempoDNS': 'Tiempo DNS',
+    'tiempos.tiempoConexion': 'Tiempo de Conexión',
+
+    // Media labels
+    'audio.mp3': 'Soporte MP3',
+    'audio.wav': 'Soporte WAV',
+    'audio.ogg': 'Soporte OGG',
+    'video.mp4': 'Soporte MP4',
+    'video.webm': 'Soporte WebM',
+    'video.ogg': 'Soporte OGG Video',
+    'webrtc': 'Soporte WebRTC',
+    'mediaRecorder': 'Grabación Multimedia',
+
+    // Storage labels
+    'localStorage': 'LocalStorage',
+    'sessionStorage': 'SessionStorage',
+    'cookies': 'Cookies',
+    'cuotaTotal': 'Cuota Total',
+    'usado': 'Espacio Usado',
+    'disponible': 'Espacio Disponible',
+
+    // Permissions labels
+    'geolocation': 'Ubicación',
+    'notifications': 'Notificaciones',
+    'microphone': 'Micrófono',
+    'camera': 'Cámara',
+    'clipboard-read': 'Lectura Portapapeles',
+    'clipboard-write': 'Escritura Portapapeles'
 };
 
 /**
@@ -85,7 +119,7 @@ function createSectionHTML(data, labels) {
  * Incluye datos del navegador, sistema, pantalla, mouse y red
  * @returns {Object} Objeto con todas las categorías de información
  */
-function getVisitorInfo() {
+async function getVisitorInfo() {
     /**
      * Detecta el navegador actual basado en el User Agent
      * @returns {string} Nombre del navegador detectado
@@ -191,13 +225,128 @@ function getVisitorInfo() {
             'No disponible'
     };
 
+    // Datos de rendimiento
+    const performanceData = getPerformanceInfo();
+
+    // Datos de capacidades multimedia
+    const mediaData = getMediaCapabilities();
+
+    // Datos de almacenamiento
+    const storageData = await getStorageInfo();
+
+    // Datos de permisos
+    const permissionsData = await getPermissionsStatus();
+
     return {
         browserData,
         systemData,
         screenData,
         mouseData,
-        networkData
+        networkData,
+        performanceData,
+        mediaData,
+        storageData,
+        permissionsData
     };
+}
+
+/**
+ * Obtiene información sobre el rendimiento del navegador
+ * @returns {Object} Datos de rendimiento
+ */
+function getPerformanceInfo() {
+    const performance = window.performance || {};
+    const memory = performance.memory || {};
+    const timing = performance.timing || {};
+    
+    return {
+        memoria: {
+            limiteJS: memory.jsHeapSizeLimit ? `${(memory.jsHeapSizeLimit / 1048576).toFixed(2)} MB` : 'No disponible',
+            memoriaTotal: memory.totalJSHeapSize ? `${(memory.totalJSHeapSize / 1048576).toFixed(2)} MB` : 'No disponible',
+            memoriaUsada: memory.usedJSHeapSize ? `${(memory.usedJSHeapSize / 1048576).toFixed(2)} MB` : 'No disponible'
+        },
+        tiempos: {
+            tiempoCarga: timing.loadEventEnd - timing.navigationStart ? `${timing.loadEventEnd - timing.navigationStart}ms` : 'No disponible',
+            tiempoDNS: timing.domainLookupEnd - timing.domainLookupStart ? `${timing.domainLookupEnd - timing.domainLookupStart}ms` : 'No disponible',
+            tiempoConexion: timing.connectEnd - timing.connectStart ? `${timing.connectEnd - timing.connectStart}ms` : 'No disponible'
+        }
+    };
+}
+
+/**
+ * Obtiene información sobre las capacidades multimedia
+ * @returns {Object} Datos de capacidades multimedia
+ */
+function getMediaCapabilities() {
+    const audioTypes = ['audio/mp3', 'audio/wav', 'audio/ogg'];
+    const videoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    
+    const checkMediaSupport = (type) => {
+        const elem = type.startsWith('audio') ? document.createElement('audio') : document.createElement('video');
+        return elem.canPlayType(type) || 'No soportado';
+    };
+
+    return {
+        audio: Object.fromEntries(audioTypes.map(type => [type.split('/')[1], checkMediaSupport(type)])),
+        video: Object.fromEntries(videoTypes.map(type => [type.split('/')[1], checkMediaSupport(type)])),
+        webrtc: 'RTCPeerConnection' in window ? 'Soportado' : 'No soportado',
+        mediaRecorder: 'MediaRecorder' in window ? 'Soportado' : 'No soportado'
+    };
+}
+
+/**
+ * Obtiene información sobre el almacenamiento
+ * @returns {Promise<Object>} Datos de almacenamiento
+ */
+async function getStorageInfo() {
+    const storage = {
+        localStorage: 'localStorage' in window ? 'Disponible' : 'No disponible',
+        sessionStorage: 'sessionStorage' in window ? 'Disponible' : 'No disponible',
+        cookies: navigator.cookieEnabled ? 'Habilitadas' : 'Deshabilitadas'
+    };
+
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+        try {
+            const estimate = await navigator.storage.estimate();
+            storage.cuotaTotal = `${(estimate.quota / 1024 / 1024).toFixed(2)} MB`;
+            storage.usado = `${(estimate.usage / 1024 / 1024).toFixed(2)} MB`;
+            storage.disponible = `${((estimate.quota - estimate.usage) / 1024 / 1024).toFixed(2)} MB`;
+        } catch (e) {
+            console.log('Error al obtener estimación de almacenamiento:', e);
+        }
+    }
+
+    return storage;
+}
+
+/**
+ * Obtiene el estado de los permisos del navegador
+ * @returns {Promise<Object>} Estado de los permisos
+ */
+async function getPermissionsStatus() {
+    const permissions = {};
+    
+    if ('permissions' in navigator) {
+        const permissionQueries = [
+            'geolocation',
+            'notifications',
+            'microphone',
+            'camera',
+            'clipboard-read',
+            'clipboard-write'
+        ];
+
+        for (const permission of permissionQueries) {
+            try {
+                const result = await navigator.permissions.query({ name: permission });
+                permissions[permission] = result.state;
+            } catch (e) {
+                permissions[permission] = 'No soportado';
+            }
+        }
+    }
+
+    return permissions;
 }
 
 /**
@@ -243,14 +392,34 @@ async function updateBatteryInfo() {
  * Muestra toda la información del visitante en la interfaz
  * Actualiza cada sección de la página con los datos correspondientes
  */
-function displayVisitorInfo() {
-    const data = getVisitorInfo();
+async function displayVisitorInfo() {
+    const data = await getVisitorInfo();
     
     document.getElementById('browserData').innerHTML = createSectionHTML(data.browserData, labels);
     document.getElementById('systemData').innerHTML = createSectionHTML(data.systemData, labels);
     document.getElementById('screenData').innerHTML = createSectionHTML(data.screenData, labels);
     document.getElementById('mouseData').innerHTML = createSectionHTML(data.mouseData, labels);
     document.getElementById('networkData').innerHTML = createSectionHTML(data.networkData, labels);
+    
+    // Añadir las nuevas secciones al HTML
+    const sections = {
+        'performanceData': 'Rendimiento',
+        'mediaData': 'Capacidades Multimedia',
+        'storageData': 'Almacenamiento',
+        'permissionsData': 'Permisos'
+    };
+
+    for (const [key, title] of Object.entries(sections)) {
+        const sectionElement = document.createElement('section');
+        sectionElement.className = 'info-section';
+        sectionElement.innerHTML = `
+            <h2>${title}</h2>
+            <div id="${key}" class="info-content">
+                ${createSectionHTML(data[key], labels)}
+            </div>
+        `;
+        document.querySelector('.container').appendChild(sectionElement);
+    }
 }
 
 /**
