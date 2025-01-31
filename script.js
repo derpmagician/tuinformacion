@@ -17,20 +17,37 @@ function getVisitorInfo() {
         return browser;
     })();
 
+    // Detectar sistema operativo de manera moderna
+    const getOperatingSystem = () => {
+        const userAgent = navigator.userAgent;
+        if (navigator.userAgentData?.platform) {
+            return navigator.userAgentData.platform;
+        } else if (userAgent.indexOf("Win") !== -1) {
+            return "Windows";
+        } else if (userAgent.indexOf("Mac") !== -1) {
+            return "MacOS";
+        } else if (userAgent.indexOf("Linux") !== -1) {
+            return "Linux";
+        } else if (userAgent.indexOf("Android") !== -1) {
+            return "Android";
+        } else if (userAgent.indexOf("iOS") !== -1) {
+            return "iOS";
+        }
+        return "Sistema Operativo Desconocido";
+    };
+
     // Datos del navegador
     const browserData = {
         browser: browserInfo,
         userAgent: navigator.userAgent,
         cookiesEnabled: navigator.cookieEnabled ? 'Sí' : 'No',
-        javaEnabled: navigator.javaEnabled ? navigator.javaEnabled() : 'No disponible',
         onlineStatus: navigator.onLine ? 'Conectado' : 'Desconectado',
-        vendor: navigator.vendor || 'No disponible',
-        platform: navigator.platform
+        vendor: navigator.vendor || 'No disponible'
     };
 
     // Datos del sistema
     const systemData = {
-        os: navigator.platform,
+        os: getOperatingSystem(),
         deviceType: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'Móvil' : 'Escritorio',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         language: navigator.language || navigator.userLanguage,
@@ -138,11 +155,8 @@ function displayVisitorInfo() {
         browser: 'Navegador',
         userAgent: 'User Agent',
         cookiesEnabled: 'Cookies Habilitadas',
-        javaEnabled: 'Java Habilitado',
         onlineStatus: 'Estado de Conexión',
         vendor: 'Proveedor',
-        platform: 'Plataforma',
-
         // System labels
         os: 'Sistema Operativo',
         deviceType: 'Tipo de Dispositivo',
@@ -155,7 +169,6 @@ function displayVisitorInfo() {
         'preferencias.reduccionMovimiento': 'Prefiere Reducir Movimiento',
         'preferencias.modoOscuro': 'Prefiere Modo Oscuro',
         'preferencias.contrasteAlto': 'Prefiere Alto Contraste',
-
         // Screen labels
         screenResolution: 'Resolución de Pantalla',
         colorDepth: 'Profundidad de Color',
@@ -167,12 +180,10 @@ function displayVisitorInfo() {
         screenAvailable: 'Área Disponible',
         maxTouchPoints: 'Puntos Táctiles Máximos',
         fullscreenSupported: 'Soporta Pantalla Completa',
-
         // Mouse labels
         posicionX: 'Posición X',
         posicionY: 'Posición Y',
         ultimoClick: 'Último Click',
-
         // Network labels
         ip: 'Dirección IP',
         conexion: 'Tipo de Conexión',
