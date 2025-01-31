@@ -7,6 +7,10 @@
     --section-bg: #f8f9fa;
     --border-color: #eee;
     --shadow-color: rgba(0, 0, 0, 0.1);
+    --text-primary: #1a73e8;
+    --bg-primary: #f0f2f5;
+    --text-secondary: #444;
+    --bg-secondary: #f8f9fa;
 }
 
 [data-theme="dark"] {
@@ -18,6 +22,10 @@
     --section-bg: #363636;
     --border-color: #404040;
     --shadow-color: rgba(0, 0, 0, 0.3);
+    --text-primary: #60a5fa;
+    --bg-primary: #1a1a1a;
+    --text-secondary: #e0e0e0;
+    --bg-secondary: #363636;
 }
 
 body {
@@ -25,7 +33,8 @@ body {
     background-color: var(--background-color);
     margin: 0;
     padding: 20px;
-    line-height: 1.6;
+    line-height: 1.5;
+    font-size: 16px;
     color: var(--text-color);
     transition: all 0.3s ease;
 }
@@ -64,8 +73,9 @@ h2 {
 }
 
 .info-item {
-    margin: 10px 0;
-    padding: 8px 0;
+    margin: 4px 0;
+    padding: 8px;
+    border-radius: 4px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
@@ -74,6 +84,10 @@ h2 {
 
 .info-item:last-child {
     border-bottom: none;
+}
+
+.info-item:focus-within {
+    background-color: var(--bg-secondary);
 }
 
 .info-label {
@@ -159,4 +173,203 @@ input:checked + .slider .sun {
 
 input:checked + .slider .moon {
     opacity: 1;
+}
+
+/* Estilos para accesibilidad */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.skip-to-main-content {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    padding: 8px;
+    z-index: 100;
+    transition: top 0.3s;
+}
+
+.skip-to-main-content:focus {
+    top: 0;
+}
+
+/* Mejoras de contraste y foco */
+:focus {
+    outline: 3px solid var(--text-primary);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Mejoras de legibilidad */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.high-contrast {
+    --text-primary: #000000;
+    --bg-primary: #ffffff;
+    --text-secondary: #000000;
+    --bg-secondary: #f0f0f0;
+}
+
+[data-theme='dark'].high-contrast {
+    --text-primary: #ffffff;
+    --bg-primary: #000000;
+    --text-secondary: #ffffff;
+    --bg-secondary: #1a1a1a;
+}
+
+kbd {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--text-secondary);
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-family: monospace;
+}
+
+/* Estilos para secciones colapsables */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    user-select: none;
+}
+
+.section-header:hover,
+.section-header:focus {
+    background-color: var(--bg-secondary);
+}
+
+.collapse-icon {
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    position: relative;
+    transition: transform 0.3s;
+}
+
+.collapse-icon::before,
+.collapse-icon::after {
+    content: '';
+    position: absolute;
+    background-color: var(--text-color);
+    border-radius: 2px;
+    transition: transform 0.3s;
+}
+
+.collapse-icon::before {
+    width: 2px;
+    height: 12px;
+    left: 9px;
+    top: 4px;
+}
+
+.collapse-icon::after {
+    width: 12px;
+    height: 2px;
+    left: 4px;
+    top: 9px;
+}
+
+.info-content.collapsed {
+    display: none;
+}
+
+.section-header[aria-expanded="false"] .collapse-icon::before {
+    transform: scaleY(0);
+}
+
+/* Estilos para atajos de teclado */
+.keyboard-shortcuts {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 0.9em;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.keyboard-shortcuts kbd {
+    display: inline-block;
+    margin: 0 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--text-secondary);
+    border-radius: 3px;
+    box-shadow: 0 1px 1px var(--shadow-color);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.info-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Desactivar animaciones si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+    .info-content,
+    .collapse-icon,
+    .section-header {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Estilos para los botones de desplazamiento */
+.scroll-button {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    margin-left: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.scroll-button:hover {
+    background-color: var(--text-color);
+    color: var(--background-color);
+}
+
+.scroll-button:focus {
+    outline: 2px solid var(--text-color);
+    outline-offset: 2px;
 }

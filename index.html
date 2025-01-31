@@ -3,72 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Información detallada del sistema, navegador y dispositivo del visitante">
     <title>Información del Sistema</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
+    <header role="banner">
         <h1>Información del Sistema</h1>
         <div class="theme-switch-wrapper">
             <label class="theme-switch" for="checkbox">
-                <input type="checkbox" id="checkbox" />
-                <div class="slider round"></div>
+                <em id="theme-label">Modo Oscuro</em>
+                <input type="checkbox" id="checkbox" role="switch" aria-label="Cambiar tema oscuro/claro" />
+                <div class="slider round" aria-hidden="true"></div>
             </label>
-            <em>Modo Oscuro</em>
+            <!-- <button id="scrollToTop" class="scroll-button" aria-label="Ir al inicio de la página" title="Ir al inicio">
+                ↑
+            </button>
+            <button id="scrollToBottom" class="scroll-button" aria-label="Ir al final de la página" title="Ir al final">
+                ↓
+            </button> -->
         </div>
     </header>
 
-    <div class="container">
-        <section class="info-section">
-            <h2>Información del Navegador</h2>
-            <div id="browserData" class="info-content"></div>
+    <main role="main" class="container">
+        <section class="info-section" role="region" aria-labelledby="browser-title">
+            <h2 id="browser-title">Información del Navegador</h2>
+            <div id="browserData" class="info-content" role="list" aria-live="polite"></div>
         </section>
         
-        <section class="info-section">
-            <h2>Información del Sistema</h2>
-            <div id="systemData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="system-title">
+            <h2 id="system-title">Información del Sistema</h2>
+            <div id="systemData" class="info-content" role="list" aria-live="polite"></div>
         </section>
         
-        <section class="info-section">
-            <h2>Información de Pantalla</h2>
-            <div id="screenData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="screen-title">
+            <h2 id="screen-title">Información de Pantalla</h2>
+            <div id="screenData" class="info-content" role="list" aria-live="polite"></div>
         </section>
         
-        <section class="info-section">
-            <h2>Información del Mouse</h2>
-            <div id="mouseData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="mouse-title">
+            <h2 id="mouse-title">Información del Mouse</h2>
+            <div id="mouseData" class="info-content" role="list" aria-live="polite"></div>
         </section>
         
-        <section class="info-section">
-            <h2>Información de Red</h2>
-            <div id="networkData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="network-title">
+            <h2 id="network-title">Información de Red</h2>
+            <div id="networkData" class="info-content" role="list" aria-live="polite"></div>
         </section>
 
-        <section class="info-section">
-            <h2>Rendimiento</h2>
-            <div id="performanceData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="performance-title">
+            <h2 id="performance-title">Rendimiento</h2>
+            <div id="performanceData" class="info-content" role="list" aria-live="polite"></div>
         </section>
 
-        <section class="info-section">
-            <h2>Capacidades Multimedia</h2>
-            <div id="mediaData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="media-title">
+            <h2 id="media-title">Capacidades Multimedia</h2>
+            <div id="mediaData" class="info-content" role="list" aria-live="polite"></div>
         </section>
 
-        <section class="info-section">
-            <h2>Almacenamiento</h2>
-            <div id="storageData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="storage-title">
+            <h2 id="storage-title">Almacenamiento</h2>
+            <div id="storageData" class="info-content" role="list" aria-live="polite"></div>
         </section>
 
-        <section class="info-section">
-            <h2>Permisos</h2>
-            <div id="permissionsData" class="info-content"></div>
+        <section class="info-section" role="region" aria-labelledby="permissions-title">
+            <h2 id="permissions-title">Permisos</h2>
+            <div id="permissionsData" class="info-content" role="list" aria-live="polite"></div>
         </section>
-    </div>
+    </main>
 
-    <footer>
-        <p>Actualización automática cada 15 segundos</p>
+    <footer role="contentinfo">
+        <div id="skip-link" class="visually-hidden">
+            <a href="#main" class="skip-to-main-content">Saltar al contenido principal</a>
+        </div>
     </footer>
-
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,8 +1,192 @@
 // Variables globales para el seguimiento del mouse y estado del sistema
-let mouseX = 0;        // Coordenada X actual del mouse
-let mouseY = 0;        // Coordenada Y actual del mouse
-let lastClick = 'Ningún clic registrado';  // Última posición de clic registrada
-let batteryStatus = 'No disponible';  // Estado actual de la batería
+let mouseX = 0;
+let mouseY = 0;
+let lastClick = 'Ningún clic registrado';
+let batteryStatus = 'No disponible';
+
+// Atajos de teclado
+const KEYBOARD_SHORTCUTS = {
+    TOGGLE_THEME: { key: 't', alt: true, description: 'Cambiar tema claro/oscuro' },
+    // TOGGLE_ALL: { key: 'a', alt: true, description: 'Expandir/Colapsar todas las secciones' },
+    TOGGLE_SECTION: { key: 'Enter', alt: false, description: 'Expandir/Colapsar sección actual' },
+    // NEXT_SECTION: { key: 'ArrowDown', alt: true, description: 'Ir a la siguiente sección' },
+    // PREV_SECTION: { key: 'ArrowUp', alt: true, description: 'Ir a la sección anterior' }
+};
+
+/**
+ * Maneja los atajos de teclado globales
+ * @param {KeyboardEvent} e - Evento del teclado
+ */
+function handleKeyboardShortcuts(e) {
+    // Evitar conflictos con otros atajos del sistema
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    const { key, altKey } = e;
+    const keyLower = key.toLowerCase();
+
+    // Manejar atajos globales
+    if (altKey) {
+        if (keyLower === KEYBOARD_SHORTCUTS.TOGGLE_THEME.key) {
+            e.preventDefault();
+            toggleTheme();
+        } 
+        else if (keyLower === KEYBOARD_SHORTCUTS.TOGGLE_ALL.key) {
+            e.preventDefault();
+            toggleAllSections();
+        }
+        else if (key === 'ArrowDown') {
+            e.preventDefault();
+            navigateSections('next');
+        }
+        else if (key === 'ArrowUp') {
+            e.preventDefault();
+            navigateSections('prev');
+        }
+    }
+    // Manejar Enter en secciones
+    else if (key === 'Enter' && e.target.classList.contains('section-header')) {
+        e.preventDefault();
+        toggleSection(e.target.closest('.info-section'));
+    }
+}
+
+/**
+ * Navega entre secciones
+ * @param {string} direction - Dirección de navegación ('next' o 'prev')
+ */
+function navigateSections(direction) {
+    const sections = Array.from(document.querySelectorAll('.info-section'));
+    if (!sections.length) return;
+
+    const currentSection = document.activeElement.closest('.info-section');
+    let currentIndex = currentSection ? sections.indexOf(currentSection) : -1;
+    
+    // Si no hay sección activa o no se encontró, empezar desde el principio
+    if (currentIndex === -1) {
+        currentIndex = direction === 'next' ? -1 : sections.length;
+    }
+    
+    // Calcular el siguiente índice
+    let nextIndex;
+    if (direction === 'next') {
+        nextIndex = (currentIndex + 1) % sections.length;
+    } else {
+        nextIndex = (currentIndex - 1 + sections.length) % sections.length;
+    }
+    
+    // Enfocar el encabezado de la siguiente sección
+    const nextHeader = sections[nextIndex].querySelector('.section-header');
+    if (nextHeader) {
+        nextHeader.focus();
+        // Hacer scroll a la sección si es necesario
+        nextHeader.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+/**
+ * Alterna el estado de todas las secciones
+ */
+function toggleAllSections() {
+    const sections = document.querySelectorAll('.info-section');
+    if (!sections.length) return;
+
+    // Contar secciones colapsadas
+    const collapsedCount = Array.from(sections).filter(section => 
+        section.querySelector('.info-content').classList.contains('collapsed')).length;
+    
+    // Si más de la mitad están colapsadas, expandir todas; si no, colapsar todas
+    const shouldExpand = collapsedCount > sections.length / 2;
+    console.log(shouldExpand);
+    
+    sections.forEach(section => {
+        const content = section.querySelector('.info-content');
+        const header = section.querySelector('.section-header');
+        
+        if (!content || !header) return;
+        
+        if (shouldExpand) {
+            content.classList.remove('collapsed');
+            header.setAttribute('aria-expanded', 'true');
+            content.style.display = '';
+        } else {
+            content.classList.add('collapsed');
+            header.setAttribute('aria-expanded', 'false');
+            content.style.display = 'none';
+        }
+    });
+    
+    // Guardar estado en localStorage
+    try {
+        const sectionStates = Array.from(sections).reduce((acc, section) => {
+            const id = section.id || section.querySelector('h2')?.textContent;
+            if (id) {
+                acc[id] = !section.querySelector('.info-content').classList.contains('collapsed');
+            }
+            return acc;
+        }, {});
+        
+        localStorage.setItem('sectionStates', JSON.stringify(sectionStates));
+    } catch (error) {
+        console.warn('No se pudo guardar el estado de las secciones:', error);
+    }
+    
+    // Anunciar cambio para lectores de pantalla
+    announceToScreenReader(`${shouldExpand ? 'Expandidas' : 'Colapsadas'} todas las secciones`);
+}
+
+/**
+ * Inicializa los controles de las secciones
+ */
+function initSectionControls() {
+    document.querySelectorAll('.info-section').forEach(section => {
+        const header = section.querySelector('h2');
+        if (!header) return;
+
+        header.classList.add('section-header');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-expanded', 'true');
+        
+        // Añadir icono de colapso
+        const icon = document.createElement('span');
+        icon.className = 'collapse-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        header.appendChild(icon);
+        
+        // Añadir eventos de clic y teclado
+        header.addEventListener('click', () => toggleSection(section));
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleSection(section);
+            }
+        });
+        
+        // Restaurar estado guardado
+        try {
+            const savedStates = JSON.parse(localStorage.getItem('sectionStates'));
+            if (savedStates) {
+                const id = section.id || header.textContent;
+                if (id && !savedStates[id]) {
+                    const content = section.querySelector('.info-content');
+                    if (content) {
+                        content.classList.add('collapsed');
+                        content.style.display = 'none';
+                        header.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Error al restaurar estados de sección:', error);
+        }
+    });
+
+    // Asegurarse de que el manejador de eventos esté registrado una sola vez
+    document.removeEventListener('keydown', handleKeyboardShortcuts);
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
 
 // Objeto de etiquetas para la interfaz de usuario
 // Mapea las claves de datos a sus nombres legibles en español
@@ -85,6 +269,178 @@ const labels = {
 };
 
 /**
+ * Maneja los atajos de teclado
+ * @param {KeyboardEvent} e - Evento del teclado
+ */
+function handleKeyboardShortcuts(e) {
+    const { key, altKey } = e;
+    
+    // Manejar atajos globales
+    if (altKey && key.toLowerCase() === KEYBOARD_SHORTCUTS.TOGGLE_THEME.key) {
+        e.preventDefault();
+        toggleTheme();
+    } else if (altKey && key.toLowerCase() === KEYBOARD_SHORTCUTS.TOGGLE_ALL.key) {
+        e.preventDefault();
+        toggleAllSections();
+    } else if (altKey && key === KEYBOARD_SHORTCUTS.NEXT_SECTION.key) {
+        e.preventDefault();
+        navigateSections('next');
+    } else if (altKey && key === KEYBOARD_SHORTCUTS.PREV_SECTION.key) {
+        e.preventDefault();
+        navigateSections('prev');
+    }
+    
+    // Manejar tecla Enter en secciones
+    if (key === KEYBOARD_SHORTCUTS.TOGGLE_SECTION.key && 
+        e.target.classList.contains('section-header')) {
+        e.preventDefault();
+        toggleSection(e.target.closest('.info-section'));
+    }
+}
+
+/**
+ * Navega entre secciones
+ * @param {string} direction - Dirección de navegación ('next' o 'prev')
+ */
+function navigateSections(direction) {
+    const sections = Array.from(document.querySelectorAll('.info-section'));
+    const currentSection = document.activeElement.closest('.info-section');
+    let index = currentSection ? sections.indexOf(currentSection) : -1;
+    
+    if (direction === 'next') {
+        index = (index + 1) % sections.length;
+    } else {
+        index = (index - 1 + sections.length) % sections.length;
+    }
+    
+    sections[index].querySelector('.section-header').focus();
+}
+
+/**
+ * Alterna el estado de todas las secciones
+ * @returns {void}
+ */
+function toggleAllSections() {
+    const sections = document.querySelectorAll('.info-section');
+    if (!sections.length) return;
+
+    // Contar secciones colapsadas para determinar la acción
+    const collapsedCount = Array.from(sections).filter(section => 
+        section.querySelector('.info-content').classList.contains('collapsed')).length;
+    
+    // Si más de la mitad están colapsadas, expandir todas; si no, colapsar todas
+    const shouldExpand = collapsedCount > sections.length / 2;
+    
+    sections.forEach(section => {
+        const content = section.querySelector('.info-content');
+        const header = section.querySelector('.section-header');
+        
+        if (!content || !header) return;
+        
+        if (shouldExpand) {
+            content.classList.remove('collapsed');
+            header.setAttribute('aria-expanded', 'true');
+            // Asegurar que el contenido sea visible
+            content.style.display = '';
+        } else {
+            content.classList.add('collapsed');
+            header.setAttribute('aria-expanded', 'false');
+            // Ocultar el contenido
+            content.style.display = 'none';
+        }
+    });
+    
+    // Guardar estado en localStorage
+    try {
+        const sectionStates = Array.from(sections).reduce((acc, section) => {
+            const id = section.id || section.querySelector('h2')?.textContent;
+            if (id) {
+                acc[id] = !section.querySelector('.info-content').classList.contains('collapsed');
+            }
+            return acc;
+        }, {});
+        
+        localStorage.setItem('sectionStates', JSON.stringify(sectionStates));
+    } catch (error) {
+        console.warn('No se pudo guardar el estado de las secciones:', error);
+    }
+    
+    // Anunciar cambio para lectores de pantalla
+    announceToScreenReader(`${shouldExpand ? 'Expandidas' : 'Colapsadas'} todas las secciones`);
+    
+    // Enfocar la primera sección si se expandieron todas
+    if (shouldExpand) {
+        const firstHeader = sections[0].querySelector('.section-header');
+        if (firstHeader) {
+            firstHeader.focus();
+        }
+    }
+}
+
+/**
+ * Alterna el estado de una sección específica
+ * @param {HTMLElement} section - Elemento de la sección
+ */
+function toggleSection(section) {
+    const content = section.querySelector('.info-content');
+    const header = section.querySelector('.section-header');
+    const isCollapsed = content.classList.toggle('collapsed');
+    
+    header.setAttribute('aria-expanded', !isCollapsed);
+    announceToScreenReader(`Sección ${header.textContent} ${isCollapsed ? 'colapsada' : 'expandida'}`);
+}
+
+/**
+ * Anuncia un mensaje a los lectores de pantalla
+ * @param {string} message - Mensaje a anunciar
+ */
+function announceToScreenReader(message) {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('role', 'status');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.className = 'visually-hidden';
+    announcement.textContent = message;
+    document.body.appendChild(announcement);
+    setTimeout(() => announcement.remove(), 1000);
+}
+
+/**
+ * Alterna el tema de la aplicación
+ */
+function toggleTheme() {
+    const toggleSwitch = document.querySelector('#checkbox');
+    toggleSwitch.checked = !toggleSwitch.checked;
+    toggleSwitch.dispatchEvent(new Event('change'));
+}
+
+/**
+ * Maneja la accesibilidad del teclado
+ * @param {KeyboardEvent} e - Evento del teclado
+ */
+function handleKeyboardShortcuts(e) {
+    // Alt + T para cambiar el tema
+    if (e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        const toggleSwitch = document.querySelector('#checkbox');
+        toggleSwitch.checked = !toggleSwitch.checked;
+        toggleSwitch.dispatchEvent(new Event('change'));
+    }
+}
+
+/**
+ * Actualiza el texto de las etiquetas ARIA
+ * @param {boolean} isDark - Si el tema es oscuro
+ */
+function updateAriaLabels(isDark) {
+    const themeLabel = document.getElementById('theme-label');
+    const checkbox = document.querySelector('#checkbox');
+    const newTheme = isDark ? 'oscuro' : 'claro';
+    
+    themeLabel.textContent = `Modo ${isDark ? 'Oscuro' : 'Claro'}`;
+    checkbox.setAttribute('aria-label', `Cambiar a modo ${isDark ? 'claro' : 'oscuro'}`);
+}
+
+/**
  * Genera el HTML para mostrar una sección de información
  * @param {Object} data - Objeto con los datos a mostrar
  * @param {Object} labels - Objeto con las etiquetas para cada dato
@@ -97,17 +453,17 @@ function createSectionHTML(data, labels) {
                 return Object.entries(value)
                     .map(([subKey, subValue]) => {
                         const label = labels[`${key}.${subKey}`] || subKey;
-                        return `<div class="info-item">
+                        return `<div class="info-item" role="listitem" tabindex="0">
                             <span class="info-label">${label}:</span>
-                            <span class="info-value">${subValue}</span>
+                            <span class="info-value" aria-label="${label}: ${subValue}">${subValue}</span>
                         </div>`;
                     })
                     .join('');
             } else {
                 const label = labels[key] || key;
-                return `<div class="info-item">
+                return `<div class="info-item" role="listitem" tabindex="0">
                     <span class="info-label">${label}:</span>
-                    <span class="info-value">${value}</span>
+                    <span class="info-value" aria-label="${label}: ${value}">${value}</span>
                 </div>`;
             }
         })
@@ -360,30 +716,83 @@ async function updateBatteryInfo() {
         if ('getBattery' in navigator) {
             const battery = await navigator.getBattery();
             
-            // Función para actualizar el estado de la batería
             const updateStatus = () => {
-                batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? 'Cargando' : 'No cargando'}`;
-                const systemSection = document.getElementById('systemData');
-                if (systemSection) {
-                    const data = getVisitorInfo();
-                    systemSection.innerHTML = createSectionHTML(data.systemData, labels);
+                const batteryInfo = {
+                    systemData: {
+                        battery: {
+                            nivel: `${Math.round(battery.level * 100)}%`,
+                            cargando: battery.charging ? 'Sí' : 'No',
+                            tiempoRestante: battery.charging
+                                ? `${Math.round(battery.chargingTime / 60)} minutos para carga completa`
+                                : `${Math.round(battery.dischargingTime / 60)} minutos restantes`
+                        }
+                    }
+                };
+                
+                batteryStatus = batteryInfo.systemData.battery;
+                
+                const batterySection = document.getElementById('systemData');
+                if (batterySection) {
+                    const batteryHTML = createSectionHTML({ battery: batteryStatus }, labels);
+                    const batteryElement = batterySection.querySelector('.info-item:last-child');
+                    if (batteryElement) {
+                        batteryElement.outerHTML = batteryHTML;
+                    } else {
+                        batterySection.insertAdjacentHTML('beforeend', batteryHTML);
+                    }
                 }
             };
 
-            // Actualización inicial
+            // Actualizar estado inicial
             updateStatus();
 
-            // Configurar listeners para cambios en la batería
+            // Escuchar cambios en la batería
             battery.addEventListener('levelchange', updateStatus);
             battery.addEventListener('chargingchange', updateStatus);
+            battery.addEventListener('chargingtimechange', updateStatus);
+            battery.addEventListener('dischargingtimechange', updateStatus);
+        } else {
+            batteryStatus = {
+                nivel: 'No disponible',
+                cargando: 'No disponible',
+                tiempoRestante: 'No disponible'
+            };
         }
     } catch (error) {
-        console.log('Error al obtener información de la batería:', error);
-        batteryStatus = 'No disponible';
-        const systemSection = document.getElementById('systemData');
-        if (systemSection) {
-            const data = getVisitorInfo();
-            systemSection.innerHTML = createSectionHTML(data.systemData, labels);
+        console.warn('Error al obtener información de la batería:', error);
+        batteryStatus = {
+            nivel: 'Error',
+            cargando: 'Error',
+            tiempoRestante: 'Error'
+        };
+    }
+}
+
+/**
+ * Actualiza solo la información dinámica (mouse y batería)
+ */
+function updateDynamicInfo() {
+    const mouseData = document.getElementById('mouseData');
+    const batterySection = document.getElementById('systemData');
+    
+    if (mouseData) {
+        const mouseInfo = {
+            position: {
+                x: mouseX,
+                y: mouseY
+            },
+            lastClick: lastClick
+        };
+        mouseData.innerHTML = createSectionHTML(mouseInfo, labels);
+    }
+    
+    if (batterySection && batteryStatus && typeof batteryStatus === 'object') {
+        const batteryHTML = createSectionHTML({ battery: batteryStatus }, labels);
+        const batteryElement = batterySection.querySelector('.info-item:last-child');
+        if (batteryElement) {
+            batteryElement.outerHTML = batteryHTML;
+        } else {
+            batterySection.insertAdjacentHTML('beforeend', batteryHTML);
         }
     }
 }
@@ -393,32 +802,36 @@ async function updateBatteryInfo() {
  * Actualiza cada sección de la página con los datos correspondientes
  */
 async function displayVisitorInfo() {
-    const data = await getVisitorInfo();
-    
-    document.getElementById('browserData').innerHTML = createSectionHTML(data.browserData, labels);
-    document.getElementById('systemData').innerHTML = createSectionHTML(data.systemData, labels);
-    document.getElementById('screenData').innerHTML = createSectionHTML(data.screenData, labels);
-    document.getElementById('mouseData').innerHTML = createSectionHTML(data.mouseData, labels);
-    document.getElementById('networkData').innerHTML = createSectionHTML(data.networkData, labels);
-    
-    // Añadir las nuevas secciones al HTML
-    const sections = {
-        'performanceData': 'Rendimiento',
-        'mediaData': 'Capacidades Multimedia',
-        'storageData': 'Almacenamiento',
-        'permissionsData': 'Permisos'
-    };
-
-    for (const [key, title] of Object.entries(sections)) {
-        const sectionElement = document.createElement('section');
-        sectionElement.className = 'info-section';
-        sectionElement.innerHTML = `
-            <h2>${title}</h2>
-            <div id="${key}" class="info-content">
-                ${createSectionHTML(data[key], labels)}
-            </div>
-        `;
-        document.querySelector('.container').appendChild(sectionElement);
+    try {
+        const visitorInfo = await getVisitorInfo();
+        
+        // Actualizar cada sección con su información correspondiente
+        Object.entries(visitorInfo).forEach(([sectionId, data]) => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                // Si es la sección del mouse o sistema, solo actualizar si es la primera vez
+                if (sectionId === 'mouseData' || 
+                    (sectionId === 'systemData' && batteryStatus !== 'No disponible')) {
+                    if (!section.hasChildNodes()) {
+                        section.innerHTML = createSectionHTML(data, labels);
+                    }
+                } else {
+                    section.innerHTML = createSectionHTML(data, labels);
+                }
+            }
+        });
+        
+        // Restaurar estados de colapso después de actualizar
+        document.querySelectorAll('.info-section').forEach(section => {
+            const header = section.querySelector('.section-header');
+            const content = section.querySelector('.info-content');
+            if (header && header.getAttribute('aria-expanded') === 'false') {
+                content.classList.add('collapsed');
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error al obtener información del visitante:', error);
     }
 }
 
@@ -431,22 +844,41 @@ async function displayVisitorInfo() {
 function initTheme() {
     const toggleSwitch = document.querySelector('#checkbox');
     const currentTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+    // Establecer tema inicial
     if (currentTheme) {
         document.documentElement.setAttribute('data-theme', currentTheme);
         if (currentTheme === 'dark') {
             toggleSwitch.checked = true;
         }
+    } else if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggleSwitch.checked = true;
     }
 
+    // Actualizar ARIA labels iniciales
+    updateAriaLabels(toggleSwitch.checked);
+
+    // Manejar cambios de tema
     toggleSwitch.addEventListener('change', function(e) {
-        if (e.target.checked) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light');
-        }
+        const isDark = e.target.checked;
+        const theme = isDark ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        updateAriaLabels(isDark);
+        
+        // Anunciar cambio de tema
+        const announcement = document.createElement('div');
+        announcement.setAttribute('role', 'status');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.className = 'visually-hidden';
+        announcement.textContent = `Tema cambiado a modo ${isDark ? 'oscuro' : 'claro'}`;
+        document.body.appendChild(announcement);
+        
+        // Eliminar el anuncio después de que se haya leído
+        setTimeout(() => announcement.remove(), 1000);
     });
 }
 
@@ -468,6 +900,11 @@ document.addEventListener('click', (e) => {
 });
 
 /**
+ * Maneja la accesibilidad del teclado
+ */
+document.addEventListener('keydown', handleKeyboardShortcuts);
+
+/**
  * Inicialización cuando el DOM está listo
  * - Configura el tema inicial
  * - Muestra la información del visitante
@@ -476,8 +913,36 @@ document.addEventListener('click', (e) => {
  */
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    displayVisitorInfo();
+    displayVisitorInfo(); // Mostrar toda la información inicial
     updateBatteryInfo();
-    // Actualiza la información cada 15 segundos para mantenerla al día
-    setInterval(displayVisitorInfo, 15000);
+    initSectionControls();
+    
+    // Mostrar atajos de teclado en el footer
+    const shortcutsHtml = Object.entries(KEYBOARD_SHORTCUTS)
+        .map(([name, { key, alt, description }]) => 
+            `<kbd>${alt ? 'Alt + ' : ''}${key}</kbd>: ${description}`
+        ).join(' | ');
+    
+    const footer = document.querySelector('footer');
+    const updateInfo = document.createElement('p');
+    updateInfo.textContent = 'Posición del mouse y estado de batería se actualizan cada 15 segundos';
+    footer.insertBefore(updateInfo, footer.firstChild);
+    footer.innerHTML += `<p class="keyboard-shortcuts">${shortcutsHtml}</p>`;
+    
+    // Actualizar solo la información dinámica cada 15 segundos
+    setInterval(updateDynamicInfo, 15000);
 });
+
+/**
+ * Detectar preferencias de reducción de movimiento
+ */
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('reduce-motion');
+}
+
+/**
+ * Detectar preferencias de alto contraste
+ */
+if (window.matchMedia('(prefers-contrast: high)').matches) {
+    document.documentElement.classList.add('high-contrast');
+}
