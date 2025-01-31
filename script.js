@@ -1,11 +1,95 @@
-// Variables globales para el seguimiento del mouse
-let mouseX = 0;
-let mouseY = 0;
-let lastClick = 'Ningún clic registrado';
+// Variables globales para el seguimiento del mouse y estado del sistema
+let mouseX = 0;        // Coordenada X actual del mouse
+let mouseY = 0;        // Coordenada Y actual del mouse
+let lastClick = 'Ningún clic registrado';  // Última posición de clic registrada
+let batteryStatus = 'No disponible';  // Estado actual de la batería
 
-// Función para obtener la información del visitante
+// Objeto de etiquetas para la interfaz de usuario
+// Mapea las claves de datos a sus nombres legibles en español
+const labels = {
+    // Browser labels
+    browser: 'Navegador',
+    userAgent: 'User Agent',
+    cookiesEnabled: 'Cookies Habilitadas',
+    onlineStatus: 'Estado de Conexión',
+    vendor: 'Proveedor',
+
+    // System labels
+    os: 'Sistema Operativo',
+    deviceType: 'Tipo de Dispositivo',
+    timezone: 'Zona Horaria',
+    language: 'Idioma',
+    cores: 'Núcleos CPU',
+    memoria: 'Memoria RAM',
+    bateria: 'Estado de Batería',
+    gpu: 'Tarjeta Gráfica',
+    'preferencias.reduccionMovimiento': 'Prefiere Reducir Movimiento',
+    'preferencias.modoOscuro': 'Prefiere Modo Oscuro',
+    'preferencias.contrasteAlto': 'Prefiere Alto Contraste',
+
+    // Screen labels
+    screenResolution: 'Resolución de Pantalla',
+    colorDepth: 'Profundidad de Color',
+    windowSize: 'Tamaño de Ventana',
+    touchScreen: 'Pantalla Táctil',
+    pixelRatio: 'Ratio de Píxeles',
+    numScreens: 'Número de Pantallas',
+    orientation: 'Orientación',
+    screenAvailable: 'Área Disponible',
+    maxTouchPoints: 'Puntos Táctiles Máximos',
+    fullscreenSupported: 'Soporta Pantalla Completa',
+
+    // Mouse labels
+    posicionX: 'Posición X',
+    posicionY: 'Posición Y',
+    ultimoClick: 'Último Click',
+
+    // Network labels
+    ip: 'Dirección IP',
+    conexion: 'Tipo de Conexión',
+    velocidad: 'Velocidad de Descarga'
+};
+
+/**
+ * Genera el HTML para mostrar una sección de información
+ * @param {Object} data - Objeto con los datos a mostrar
+ * @param {Object} labels - Objeto con las etiquetas para cada dato
+ * @returns {string} HTML generado con los datos formateados
+ */
+function createSectionHTML(data, labels) {
+    return Object.entries(data)
+        .map(([key, value]) => {
+            if (typeof value === 'object') {
+                return Object.entries(value)
+                    .map(([subKey, subValue]) => {
+                        const label = labels[`${key}.${subKey}`] || subKey;
+                        return `<div class="info-item">
+                            <span class="info-label">${label}:</span>
+                            <span class="info-value">${subValue}</span>
+                        </div>`;
+                    })
+                    .join('');
+            } else {
+                const label = labels[key] || key;
+                return `<div class="info-item">
+                    <span class="info-label">${label}:</span>
+                    <span class="info-value">${value}</span>
+                </div>`;
+            }
+        })
+        .join('');
+}
+
+/**
+ * Recopila toda la información del visitante
+ * Incluye datos del navegador, sistema, pantalla, mouse y red
+ * @returns {Object} Objeto con todas las categorías de información
+ */
 function getVisitorInfo() {
-    // Detectar navegador
+    /**
+     * Detecta el navegador actual basado en el User Agent
+     * @returns {string} Nombre del navegador detectado
+     */
     const browserInfo = (function() {
         const ua = navigator.userAgent;
         let browser = "Desconocido";
@@ -17,7 +101,12 @@ function getVisitorInfo() {
         return browser;
     })();
 
-    // Detectar sistema operativo de manera moderna
+    /**
+     * Detecta el sistema operativo del usuario
+     * Primero intenta usar la API moderna userAgentData
+     * Si no está disponible, usa el análisis del User Agent
+     * @returns {string} Nombre del sistema operativo detectado
+     */
     const getOperatingSystem = () => {
         const userAgent = navigator.userAgent;
         if (navigator.userAgentData?.platform) {
@@ -53,23 +142,14 @@ function getVisitorInfo() {
         language: navigator.language || navigator.userLanguage,
         cores: navigator.hardwareConcurrency || 'No disponible',
         memoria: navigator.deviceMemory ? navigator.deviceMemory + 'GB' : 'No disponible',
-        bateria: 'Verificando...',
-        gpu: 'Verificando...',
+        bateria: batteryStatus,  // Usar el estado global de la batería
+        gpu: 'No disponible',
         preferencias: {
             reduccionMovimiento: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Sí' : 'No',
             modoOscuro: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Sí' : 'No',
             contrasteAlto: window.matchMedia('(prefers-contrast: high)').matches ? 'Sí' : 'No'
         }
     };
-
-    // Obtener información de la batería si está disponible
-    if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
-            systemData.bateria = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? 'Cargando' : 'No cargando'}`;
-        });
-    } else {
-        systemData.bateria = 'No disponible';
-    }
 
     // Obtener información de la GPU
     const canvas = document.createElement('canvas');
@@ -120,77 +200,52 @@ function getVisitorInfo() {
     };
 }
 
-// Función para mostrar la información
+/**
+ * Gestiona la información de la batería del dispositivo
+ * Utiliza la API getBattery para obtener y monitorear el estado
+ * Actualiza la interfaz cuando hay cambios en la batería
+ * @async
+ */
+async function updateBatteryInfo() {
+    try {
+        if ('getBattery' in navigator) {
+            const battery = await navigator.getBattery();
+            
+            // Función para actualizar el estado de la batería
+            const updateStatus = () => {
+                batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? 'Cargando' : 'No cargando'}`;
+                const systemSection = document.getElementById('systemData');
+                if (systemSection) {
+                    const data = getVisitorInfo();
+                    systemSection.innerHTML = createSectionHTML(data.systemData, labels);
+                }
+            };
+
+            // Actualización inicial
+            updateStatus();
+
+            // Configurar listeners para cambios en la batería
+            battery.addEventListener('levelchange', updateStatus);
+            battery.addEventListener('chargingchange', updateStatus);
+        }
+    } catch (error) {
+        console.log('Error al obtener información de la batería:', error);
+        batteryStatus = 'No disponible';
+        const systemSection = document.getElementById('systemData');
+        if (systemSection) {
+            const data = getVisitorInfo();
+            systemSection.innerHTML = createSectionHTML(data.systemData, labels);
+        }
+    }
+}
+
+/**
+ * Muestra toda la información del visitante en la interfaz
+ * Actualiza cada sección de la página con los datos correspondientes
+ */
 function displayVisitorInfo() {
     const data = getVisitorInfo();
     
-    // Función helper para crear el HTML de cada sección
-    function createSectionHTML(data, labels) {
-        return Object.entries(data)
-            .map(([key, value]) => {
-                if (typeof value === 'object') {
-                    return Object.entries(value)
-                        .map(([subKey, subValue]) => {
-                            const label = labels[`${key}.${subKey}`] || subKey;
-                            return `<div class="info-item">
-                                <span class="info-label">${label}:</span>
-                                <span class="info-value">${subValue}</span>
-                            </div>`;
-                        })
-                        .join('');
-                } else {
-                    const label = labels[key] || key;
-                    return `<div class="info-item">
-                        <span class="info-label">${label}:</span>
-                        <span class="info-value">${value}</span>
-                    </div>`;
-                }
-            })
-            .join('');
-    }
-
-    // Labels para cada sección
-    const labels = {
-        // Browser labels
-        browser: 'Navegador',
-        userAgent: 'User Agent',
-        cookiesEnabled: 'Cookies Habilitadas',
-        onlineStatus: 'Estado de Conexión',
-        vendor: 'Proveedor',
-        // System labels
-        os: 'Sistema Operativo',
-        deviceType: 'Tipo de Dispositivo',
-        timezone: 'Zona Horaria',
-        language: 'Idioma',
-        cores: 'Núcleos CPU',
-        memoria: 'Memoria RAM',
-        bateria: 'Estado de Batería',
-        gpu: 'Tarjeta Gráfica',
-        'preferencias.reduccionMovimiento': 'Prefiere Reducir Movimiento',
-        'preferencias.modoOscuro': 'Prefiere Modo Oscuro',
-        'preferencias.contrasteAlto': 'Prefiere Alto Contraste',
-        // Screen labels
-        screenResolution: 'Resolución de Pantalla',
-        colorDepth: 'Profundidad de Color',
-        windowSize: 'Tamaño de Ventana',
-        touchScreen: 'Pantalla Táctil',
-        pixelRatio: 'Ratio de Píxeles',
-        numScreens: 'Número de Pantallas',
-        orientation: 'Orientación',
-        screenAvailable: 'Área Disponible',
-        maxTouchPoints: 'Puntos Táctiles Máximos',
-        fullscreenSupported: 'Soporta Pantalla Completa',
-        // Mouse labels
-        posicionX: 'Posición X',
-        posicionY: 'Posición Y',
-        ultimoClick: 'Último Click',
-        // Network labels
-        ip: 'Dirección IP',
-        conexion: 'Tipo de Conexión',
-        velocidad: 'Velocidad de Descarga'
-    };
-
-    // Actualizar cada sección
     document.getElementById('browserData').innerHTML = createSectionHTML(data.browserData, labels);
     document.getElementById('systemData').innerHTML = createSectionHTML(data.systemData, labels);
     document.getElementById('screenData').innerHTML = createSectionHTML(data.screenData, labels);
@@ -198,7 +253,12 @@ function displayVisitorInfo() {
     document.getElementById('networkData').innerHTML = createSectionHTML(data.networkData, labels);
 }
 
-// Theme switcher functionality
+/**
+ * Inicializa y gestiona el tema de la aplicación (claro/oscuro)
+ * - Recupera el tema guardado del localStorage
+ * - Configura el switch según el tema actual
+ * - Maneja los cambios de tema y los guarda en localStorage
+ */
 function initTheme() {
     const toggleSwitch = document.querySelector('#checkbox');
     const currentTheme = localStorage.getItem('theme');
@@ -221,20 +281,34 @@ function initTheme() {
     });
 }
 
-// Event Listeners para el mouse
+// Event Listeners
+
+/**
+ * Actualiza las coordenadas del mouse cuando se mueve
+ */
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 });
 
+/**
+ * Registra la posición del último clic
+ */
 document.addEventListener('click', (e) => {
     lastClick = `X: ${e.clientX}, Y: ${e.clientY}`;
 });
 
-// Iniciar la actualización de información y el tema
+/**
+ * Inicialización cuando el DOM está listo
+ * - Configura el tema inicial
+ * - Muestra la información del visitante
+ * - Inicia el monitoreo de la batería
+ * - Configura la actualización periódica
+ */
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     displayVisitorInfo();
-    // Actualizar la información cada 15 segundos
+    updateBatteryInfo();
+    // Actualiza la información cada 15 segundos para mantenerla al día
     setInterval(displayVisitorInfo, 15000);
 });
