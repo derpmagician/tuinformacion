@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Información del Visitante</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round">
+                <span class="sun">☀️</span>
+                <span class="moon">🌙</span>
+            </div>
+        </label>
+    </div>
+    
+    <div class="container">
+        <h1>Información del Visitante</h1>
+        
+        <div class="category-section">
+            <h2>Datos del Navegador</h2>
+            <div id="browserData" class="info-section"></div>
+        </div>
+
+        <div class="category-section">
+            <h2>Datos del Sistema</h2>
+            <div id="systemData" class="info-section"></div>
+        </div>
+
+        <div class="category-section">
+            <h2>Datos de Pantalla y Ventana</h2>
+            <div id="screenData" class="info-section"></div>
+        </div>
+
+        <div class="category-section">
+            <h2>Datos del Mouse</h2>
+            <div id="mouseData" class="info-section"></div>
+        </div>
+
+        <div class="category-section">
+            <h2>Datos de Red</h2>
+            <div id="networkData" class="info-section"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
